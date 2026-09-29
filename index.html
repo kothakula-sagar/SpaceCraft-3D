@@ -1,155 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpaceCraft 3D Planner</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BuildCraft Home Designer</title>
+  <meta name="description" content="Interactive 3D home and building configurator: plot, BHK, facing, rooms, doors, windows, furniture, materials, Vastu, cost, export and share.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/app.css">
 </head>
-<body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">S</div>
-        <div>
-          <h1>SpaceCraft <span>3D</span></h1>
-          <small>Interior planning studio</small>
-        </div>
-      </div>
+<body data-page="home">
+  <div id="home"></div>
+  <div id="editor"></div>
 
-      <div class="top-actions">
-        <button id="undoBtn" class="icon-btn" title="Undo (Ctrl/Cmd+Z)">↶</button>
-        <button id="redoBtn" class="icon-btn" title="Redo (Ctrl/Cmd+Y)">↷</button>
-        <div class="divider"></div>
-        <button id="saveBtn" class="ghost-btn">Save</button>
-        <button id="loadBtn" class="ghost-btn">Load</button>
-        <button id="resetBtn" class="danger-btn">Reset</button>
-      </div>
-    </header>
+  <!-- 3D engine (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 
-    <main class="workspace">
-      <aside class="sidebar">
-        <section class="panel">
-          <div class="panel-title">
-            <div>
-              <span class="eyebrow">PROJECT</span>
-              <h2>Room setup</h2>
-            </div>
-          </div>
+  <!-- Core: pure logic, no DOM / three.js -->
+  <script src="js/core/util.js"></script>
+  <script src="js/core/catalog.js"></script>
+  <script src="js/core/model.js"></script>
+  <script src="js/core/orientation.js"></script>
+  <script src="js/core/geometry.js"></script>
+  <script src="js/core/metrics.js"></script>
+  <script src="js/core/commands.js"></script>
+  <script src="js/core/vastu.js"></script>
+  <script src="js/core/cost.js"></script>
+  <script src="js/core/generator.js"></script>
 
-          <label>Space type</label>
-          <div id="roomTypes" class="room-grid"></div>
+  <!-- State & persistence -->
+  <script src="js/state/store.js"></script>
+  <script src="js/persistence/repo.js"></script>
 
-          <div class="field-row">
-            <div class="field">
-              <label for="roomLength">Length <span>ft</span></label>
-              <input id="roomLength" type="number" min="8" max="150" step="1" value="30">
-            </div>
-            <div class="field">
-              <label for="roomWidth">Width <span>ft</span></label>
-              <input id="roomWidth" type="number" min="8" max="150" step="1" value="24">
-            </div>
-          </div>
+  <!-- Views -->
+  <script src="js/engine3d/materials3d.js"></script>
+  <script src="js/engine3d/builders.js"></script>
+  <script src="js/engine3d/viewer.js"></script>
+  <script src="js/plan2d/plan.js"></script>
+  <script src="js/export/export.js"></script>
 
-          <div class="stats-card">
-            <div><span>Floor area</span><strong id="areaValue">720 sq ft</strong></div>
-            <div><span>Objects</span><strong id="objectCount">0</strong></div>
-          </div>
-          <button id="applyRoomBtn" class="primary-btn full">Apply room</button>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <span class="eyebrow">LIBRARY</span>
-              <h2>Furniture & objects</h2>
-            </div>
-            <button id="clearSearch" class="text-btn">Clear</button>
-          </div>
-          <input id="searchInput" class="search" type="search" placeholder="Search furniture...">
-          <div id="categoryTabs" class="tabs"></div>
-          <div id="objectLibrary" class="library"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <span class="eyebrow">STYLE</span>
-              <h2>Materials & view</h2>
-            </div>
-          </div>
-
-          <div class="color-row">
-            <label>Wall <input id="wallColor" type="color" value="#f4f0e8"></label>
-            <label>Floor <input id="floorColor" type="color" value="#c8bda9"></label>
-            <label>Furniture <input id="furnitureColor" type="color" value="#8c6746"></label>
-          </div>
-
-          <div class="theme-grid" id="themeGrid"></div>
-
-          <div class="toggle-row">
-            <label class="switch-label"><input id="gridToggle" type="checkbox" checked><span class="switch"></span> Grid</label>
-            <label class="switch-label"><input id="snapToggle" type="checkbox" checked><span class="switch"></span> Snap</label>
-            <label class="switch-label"><input id="wallsToggle" type="checkbox" checked><span class="switch"></span> Walls</label>
-          </div>
-        </section>
-
-        <section id="selectedPanel" class="panel selection-panel hidden">
-          <div class="panel-heading">
-            <div>
-              <span class="eyebrow">SELECTED</span>
-              <h2 id="selectedName">Object</h2>
-            </div>
-            <button id="deleteSelected" class="danger-icon">Delete</button>
-          </div>
-
-          <div class="transform-grid">
-            <div class="field"><label>X</label><input id="posX" type="number" step="0.25"></div>
-            <div class="field"><label>Z</label><input id="posZ" type="number" step="0.25"></div>
-            <div class="field"><label>Scale</label><input id="scaleValue" type="number" min=".25" max="3" step=".05" value="1"></div>
-            <div class="field"><label>Rotate °</label><input id="rotationValue" type="number" step="15"></div>
-          </div>
-          <div class="selection-actions">
-            <button id="rotateLeft">↺ Rotate</button>
-            <button id="duplicateSelected">Duplicate</button>
-            <button id="centerSelected">Center</button>
-          </div>
-        </section>
-      </aside>
-
-      <section class="viewport-wrap">
-        <div id="viewport"></div>
-
-        <div class="floating-toolbar">
-          <button id="viewTop" title="Top view">Top</button>
-          <button id="view3D" class="active" title="3D view">3D</button>
-          <button id="viewFront" title="Front view">Front</button>
-          <span></span>
-          <button id="zoomOut">−</button>
-          <button id="zoomReset">100%</button>
-          <button id="zoomIn">+</button>
-        </div>
-
-        <div class="selection-tip">
-          <strong>Controls</strong>
-          <span>Drag objects · Drag empty space to orbit · Scroll to zoom · Delete removes · Ctrl/Cmd+Z undo</span>
-        </div>
-
-        <div id="emptyState" class="empty-state">
-          <div class="empty-icon">✦</div>
-          <h2>Start designing your space</h2>
-          <p>Choose a room type, set the dimensions, then add furniture from the library.</p>
-          <button id="loadPresetBtn" class="primary-btn">Load a sample layout</button>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <input id="fileInput" type="file" accept=".json,application/json" hidden>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- UI -->
+  <script src="js/ui/components.js"></script>
+  <script src="js/ui/panels.js"></script>
+  <script src="js/ui/inspector.js"></script>
+  <script src="js/ui/editor.js"></script>
+  <script src="js/ui/dashboard.js"></script>
+  <script src="js/ui/dialogs.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
